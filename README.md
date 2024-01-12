@@ -20,3 +20,15 @@ Target FPGA: xc7a100tcsg324-1
 1. Coremark:        157
 2. Max. freq.:      70 MHz
 3. Coremark/Mhz:    2.24
+
+---
+
+<p align="center" > <img src="./img/coremarkUART.png"></p>
+
+<p align="center" >Coremark results</p>  
+
+---
+
+<p align="center" > <img src="./img/vivadoUtil.png"></p>
+
+<p align="center" >Vivado implementation results</p>  
