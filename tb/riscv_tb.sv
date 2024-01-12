@@ -21,7 +21,8 @@ module riscv_tb ();
     `endif
 
 	parameter real SYS_CLK_FREQ     = 1000.0 / PERIOD;     // MHz
-    parameter int UART_BAUDRATE     = 1000000; 
+    
+    import riscv_pkg::UART_BAUDRATE;
 
 	logic sys_clk, sys_rstn;
 	logic [15:0] io_led, io_sw;
@@ -34,7 +35,7 @@ module riscv_tb ();
 		#(PERIOD/2);
 	end
 
-	top #(.TB_MODE(TB_MODE), .UART_BAUDRATE(UART_BAUDRATE)) dut (.sys_clk(sys_clk), .sys_rstn(sys_rstn),
+	top #(.TB_MODE(TB_MODE)) dut (.sys_clk(sys_clk), .sys_rstn(sys_rstn),
 		.io_sw(io_sw), .io_led(io_led), .io_btnc(io_btnc),
 		.uart_txd_in(uart_txd_in), .uart_rxd_out(uart_rxd_out));
 

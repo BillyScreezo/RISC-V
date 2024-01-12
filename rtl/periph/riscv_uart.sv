@@ -1,4 +1,11 @@
-// RX/TX fifo, parite, start/(1-2) stop, flow control
+/***********************************************************************************
+ * Copyright (C) 2024 Kirill Turintsev <billiscreezo228@gmail.com>
+ * See LICENSE file for licensing details.
+ *
+ * This file contains RX/TX UART, parity, start/(1-2) stop
+ *
+ ***********************************************************************************/
+ 
 package uart_p;
 
 	localparam int APB_DBITS  = 12;

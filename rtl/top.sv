@@ -8,26 +8,16 @@
 
 module top 
 
-     import riscv_intc_pkg::NUMINT;
+    import riscv_pkg::*;
+    import riscv_intc_pkg::NUMINT;
 
 #(
-    int XLEN                = 32,           // addr and data width
-    int IO_WIDTH            = 16,           // width of io's on board (led, sw, etc.)
-    
-    int RAMSZ               = 64,           // RAM size in KBytes
-    string ROM_INIT_FILE    = "rom.hex",    // rom init file name
-
-    int SYS_CLK             = 70,
-    int UART_BAUDRATE       = 1000000,
-
-    int RSTADDR             = 32'h0,
-
-    int TB_MODE             = 0
+    int TB_MODE = 0
 )(
     input   logic                   sys_clk,
     input   logic                   sys_rstn,
-    input   logic [IO_WIDTH-1:0]    io_sw,
-    output  logic [IO_WIDTH-1:0]    io_led,
+    input   logic [GPIO_WIDTH-1:0]  io_sw,
+    output  logic [GPIO_WIDTH-1:0]  io_led,
     input   logic                   io_btnc,
 
     input   logic                   uart_txd_in,
@@ -38,15 +28,9 @@ module top
 //  ==================== DEFINES
 //  ===============================================================================================
 
-//  ==================== CONSTANTS
-    localparam int NSLAVES  = 3;    // number of bus slaves
-
-    localparam int SH_RST_WIDTH = 3;
-    localparam int SH_BTNC_WIDTH = 7;
-
 //  ==================== CLK, RST
     logic clk, rstn, locked;
-    (* ASYNC_REG="TRUE" *) logic [SH_RST_WIDTH-1:0] rstn_sreg = 0;
+    (* ASYNC_REG="TRUE" *) logic [SH_BTN_WIDTH-1:0] rstn_sreg;
 
 //  ==================== Instruction's bus
     logic instr_req_o;
@@ -61,14 +45,14 @@ module top
     logic [(XLEN/8)-1:0] data_be;
 
 //  ==================== Bus slave's signals
-    logic [NSLAVES-1:0] sel;
-    logic [XLEN-1:0] s_rdata[0:NSLAVES-1];
+    logic [BUS_SLAVES-1:0] sel;
+    logic [XLEN-1:0] s_rdata [0:BUS_SLAVES-1];
 
 //  ==================== Interrupt signals
     logic [NUMINT-1:0] ext_int;
 
 //  ==================== IO's
-    // (* ASYNC_REG="TRUE" *) logic [SH_BTNC_WIDTH-1:0] io_btnc_sreg;
+    (* ASYNC_REG="TRUE" *) logic [SH_BTN_WIDTH-1:0] io_btnc_sreg;
     
 
 //  ===============================================================================================
@@ -77,8 +61,8 @@ module top
     clkgen #(.TB_MODE(TB_MODE)) clkgen_inst (.clkin(sys_clk), .clkout(clk), .locked(locked));
 
     always_ff @(posedge clk) begin
-        rstn_sreg <= {rstn_sreg[SH_RST_WIDTH-2:0], sys_rstn & locked};
-        rstn = rstn_sreg[SH_RST_WIDTH-1];
+        rstn_sreg <= {rstn_sreg[SH_BTN_WIDTH-2:0], sys_rstn & locked};
+        rstn = rstn_sreg[SH_BTN_WIDTH-1];
     end
 
 //  ===============================================================================================
@@ -95,7 +79,7 @@ module top
             .ext_int_i(ext_int)
         );
 
-    riscv_busc #(.XLEN(XLEN), .NSLAVES(NSLAVES)) 
+    riscv_busc #(.XLEN(XLEN), .NSLAVES(BUS_SLAVES)) 
         busc (
             .clk(clk),
             .addr_i(data_addr), .sel_o(sel), .rdata_i(s_rdata), .rdata_o(data_rdata)
@@ -108,7 +92,7 @@ module top
             .enb(instr_req_o), .addrb(instr_addr), .doutb(instr_data)
         );
 
-    riscv_gpio #(.XLEN(XLEN), .WIDTH(IO_WIDTH)) 
+    riscv_gpio #(.XLEN(XLEN), .WIDTH(GPIO_WIDTH)) 
         gpio (
             .clk(clk), .rstn(rstn),
             .sel(sel[1]), .enable(data_req), .write(data_we),
@@ -126,7 +110,7 @@ module top
                     .txd(uart_rxd_out), .rxd(uart_txd_in)
                 );
         end else begin
-            riscv_uart #(.XLEN(XLEN), .SYS_CLK(SYS_CLK), .BAUDRATE(UART_BAUDRATE), .DBITS(8), .PARITY("Even"), .N_STOP_BITS(1)) 
+            riscv_uart #(.XLEN(XLEN), .SYS_CLK(SYS_CLK), .BAUDRATE(UART_BAUDRATE), .DBITS(UART_DBITS), .PARITY(UART_PARITY), .N_STOP_BITS(UART_NSTOP)) 
                 uart_inst (
                     .clk(clk), .rst_n(rstn),
                     .sel(sel[2]), .enable(data_req), .write(data_we),
@@ -139,16 +123,16 @@ module top
 //  ===============================================================================================
 //  ==================== IO's
 //  ===============================================================================================
-    // always @(posedge clk) begin
-    //     if (!rstn) begin
-    //         io_btnc_sreg <= 0;
-    //         ext_int      <= '0;
-    //     end else begin
-    //         io_btnc_sreg <= {io_btnc_sreg[SH_BTNC_WIDTH-2:0], io_btnc};
-    //         ext_int[0]   <= ~io_btnc_sreg[SH_BTNC_WIDTH-1] & (&io_btnc_sreg[SH_BTNC_WIDTH-2:0]);
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rstn) begin
+            io_btnc_sreg <= '0;
+            ext_int      <= '0;
+        end else begin
+            io_btnc_sreg <= {io_btnc_sreg[SH_BTN_WIDTH-2:0], io_btnc};
+            ext_int[0]   <= ~io_btnc_sreg[SH_BTN_WIDTH-1] & (&io_btnc_sreg[SH_BTN_WIDTH-2:0]);  // posedge
+        end
+    end
 
-    assign ext_int = '0;
+    assign ext_int[NUMINT-1:1] = '0;
 
 endmodule

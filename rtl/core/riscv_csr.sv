@@ -73,10 +73,10 @@ module riscv_csr
 
 	function logic [MXLEN-1:0] mrw(input logic [CSR_OP_WIDTH-1:0] opcode_i, input logic [MXLEN-1:0] curr, next);
 		unique case (opcode_i)
-			2'b00: mrw = curr;
-			2'b01: mrw = next;
-			2'b10: mrw = curr & ~next;
-			2'b11: mrw = curr | next;
+			CSR_OP_CURR: mrw = curr;
+			CSR_OP_NEXT: mrw = next;
+			CSR_OP_NAND: mrw = curr & ~next;
+			CSR_OP_OR: 	 mrw = curr | next;
 		endcase
 	endfunction
 

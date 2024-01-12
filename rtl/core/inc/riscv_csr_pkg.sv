@@ -22,4 +22,11 @@ package riscv_csr_pkg;
 		S_TIM_HIGH 	= 12'hC80
 	} addr_t;
 
+	enum logic [1:0] {
+		CSR_OP_CURR = 2'b00,
+		CSR_OP_NEXT = 2'b01,
+		CSR_OP_NAND = 2'b10,
+		CSR_OP_OR   = 2'b11
+	} csr_op_t;
+
 endpackage : riscv_csr_pkg
